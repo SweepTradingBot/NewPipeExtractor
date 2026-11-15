@@ -6,7 +6,6 @@
 package org.schabi.newpipe.extractor.platform
 
 import platform.JavaScriptCore.JSContext
-import platform.JavaScriptCore.JSValue
 
 actual fun createJavaScriptEngine(): JavaScriptEngine = JavaScriptCoreEngine()
 
@@ -18,12 +17,12 @@ internal class JavaScriptCoreEngine : JavaScriptEngine {
 
     override fun run(function: String, functionName: String, vararg parameters: String): String {
         val context = JSContext()
-        context.evaluateScript(function)
+        // Evaluating the source followed by the bare name yields the function value itself.
+        // This avoids JSContext's subscript API, which Kotlin/Native does not bridge cleanly.
+        // A missing name throws a ReferenceError, reported by throwIfFailed.
+        val jsFunction = context.evaluateScript("$function\n;$functionName")
         context.throwIfFailed("evaluating '$functionName'")
-        // JSContext's subscript is bridged as Any?, so cast to JSValue explicitly.
-        // Calling a non-function (e.g. undefined) sets context.exception, handled below.
-        val jsFunction = context.objectForKeyedSubscript(functionName) as? JSValue
-            ?: throw JavaScriptException("'$functionName' is not defined")
+        if (jsFunction == null) throw JavaScriptException("'$functionName' is not defined")
         val result = jsFunction.callWithArguments(parameters.toList())
         context.throwIfFailed("calling '$functionName'")
         return result?.toObject()?.toString()
