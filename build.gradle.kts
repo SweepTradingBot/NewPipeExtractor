@@ -5,9 +5,11 @@
 
 plugins {
     alias(libs.plugins.google.protobuf) apply false
+    alias(libs.plugins.kotlin.multiplatform) apply false
 }
 
-allprojects {
+// extractor-kmp is a Kotlin Multiplatform module and must not get the java-library plugin
+configure(allprojects.filter { it.name != "extractor-kmp" }) {
     apply(plugin = "java-library")
 
     version = "v0.27.1"
@@ -23,7 +25,7 @@ allprojects {
     }
 }
 
-subprojects {
+configure(subprojects.filter { it.name != "extractor-kmp" }) {
     // https://discuss.gradle.org/t/best-approach-gradle-multi-module-project-generate-just-one-global-javadoc/18657/21
     // Fixes unknown tag @implNote; the other two were added precautionary
     tasks.withType<Javadoc>().configureEach {
