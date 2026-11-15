@@ -6,6 +6,7 @@
 package org.schabi.newpipe.extractor.platform
 
 import platform.JavaScriptCore.JSContext
+import platform.JavaScriptCore.JSValue
 
 actual fun createJavaScriptEngine(): JavaScriptEngine = JavaScriptCoreEngine()
 
@@ -19,10 +20,10 @@ internal class JavaScriptCoreEngine : JavaScriptEngine {
         val context = JSContext()
         context.evaluateScript(function)
         context.throwIfFailed("evaluating '$functionName'")
-        val jsFunction = context.objectForKeyedSubscript(functionName)
-        if (jsFunction == null || !jsFunction.isObject()) {
-            throw JavaScriptException("'$functionName' is not a function")
-        }
+        // JSContext's subscript is bridged as Any?, so cast to JSValue explicitly.
+        // Calling a non-function (e.g. undefined) sets context.exception, handled below.
+        val jsFunction = context.objectForKeyedSubscript(functionName) as? JSValue
+            ?: throw JavaScriptException("'$functionName' is not defined")
         val result = jsFunction.callWithArguments(parameters.toList())
         context.throwIfFailed("calling '$functionName'")
         return result?.toObject()?.toString()
