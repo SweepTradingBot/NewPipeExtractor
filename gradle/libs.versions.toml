@@ -4,7 +4,7 @@
 #
 
 [versions]
-checkstyle = "12.3.1"
+checkstyle = "14.4.0"
 gson = "2.15.0"
 jsr305 = "3.0.2"
 junit = "5.14.4"
